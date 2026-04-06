@@ -17,5 +17,4 @@ jobs:
           components: rustfmt
 
       - name: Test VersionHub Code Format
-        working-directory: versionhub
         run: cargo fmt --check
