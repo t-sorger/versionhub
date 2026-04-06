@@ -4,14 +4,28 @@ use log::debug;
 use reqwest::Client;
 use std::fs::File;
 use std::io::BufWriter;
+use std::path::PathBuf;
 use std::time::Duration;
+use versionhub::get_package_versions_with_client;
+use versionhub::structs::Package;
 
-use versionhub::ecosystems::go::get_versions as get_versions_go;
-use versionhub::ecosystems::maven::get_versions as get_versions_maven;
-use versionhub::ecosystems::npm::get_versions as get_versions_npm;
-use versionhub::ecosystems::rust::get_versions as get_versions_rust;
-use versionhub::structs::{Args, PackageVersions};
-use versionhub::versions::get_vulnerable_versions;
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// A list of packages to fetch (`ecosystem/package` or `ecosystem/package@version_range`).
+    #[arg(short, long, alias = "pkg", alias = "pkgs", required = true, num_args = 1..)]
+    packages: Vec<Package>,
+
+    #[arg(short, long, default_value_t = 2)]
+    concurrency: usize,
+
+    /// Optional path to write JSON output
+    #[arg(short, long)]
+    output: Option<PathBuf>,
+
+    #[arg(short, long, alias = "log", default_value = "warn")]
+    log_level: String,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -29,30 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "Fetching: Ecosystem: {}, Name: {}, Range: {:?}.",
                     pkg.ecosystem, pkg.name, pkg.version_range
                 );
-
-                // Fetch all versions from the ecosystem
-                let mut pkg_versions = match pkg.ecosystem.to_lowercase().as_str() {
-                    "go" => get_versions_go(&client, pkg.name).await,
-                    "maven" => get_versions_maven(&client, pkg.name).await,
-                    "npm" => get_versions_npm(&client, pkg.name).await,
-                    "rust" => get_versions_rust(&client, pkg.name).await,
-                    _ => Err(format!("Unsupported ecosystem: {}.", pkg.ecosystem).into()),
-                }?;
-
-                // If a version range is provided, filter the results
-                if let Some(range) = pkg.version_range {
-                    debug!(
-                        "Filtering {} versions for {} based on range: {}.",
-                        pkg_versions.versions.len(),
-                        pkg_versions.name,
-                        range
-                    );
-
-                    let filtered = get_vulnerable_versions(pkg_versions.versions, range).await;
-                    pkg_versions.versions = filtered;
-                }
-
-                Ok::<PackageVersions, Box<dyn std::error::Error>>(pkg_versions)
+                get_package_versions_with_client(&client, pkg).await
             }
         })
         .buffer_unordered(args.concurrency)

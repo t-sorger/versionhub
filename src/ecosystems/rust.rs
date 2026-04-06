@@ -55,7 +55,7 @@ pub async fn get_versions(
 }
 
 #[tokio::test]
-async fn test_get_versions_rust() {
+async fn test_get_versions_sparse_merkle_tree() {
     let client = reqwest::Client::new();
     let name = "sparse-merkle-tree".to_string();
 

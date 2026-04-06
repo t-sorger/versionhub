@@ -53,7 +53,7 @@ pub async fn get_versions(
 }
 
 #[tokio::test]
-async fn test_get_versions_maven() {
+async fn test_get_versions_pax_logging_log4j2() {
     let client = reqwest::Client::new();
     let name = "org.ops4j.pax.logging:pax-logging-log4j2".to_string();
 

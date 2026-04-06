@@ -50,7 +50,7 @@ pub async fn get_versions(
 }
 
 #[tokio::test]
-async fn test_get_versions_npm() {
+async fn test_get_versions_lodash_template() {
     let client = reqwest::Client::new();
     let name = "lodash.template".to_string();
 
@@ -66,6 +66,30 @@ async fn test_get_versions_npm() {
         "4.0.0", "4.0.1", "4.0.2", "4.1.0", "4.1.1", "4.18.0", "4.18.1", "4.2.0", "4.2.1", "4.2.2",
         "4.2.3", "4.2.4", "4.2.5", "4.3.0", "4.4.0", "4.5.0",
     ];
+
+    for item in expected_to_be_included {
+        assert!(
+            result.contains(&item.to_string()),
+            "NPM version {} was missing from registry response",
+            item
+        );
+    }
+
+    debug!("Validated {} versions for NPM ", result.len());
+}
+
+#[tokio::test]
+async fn test_get_versions_npm_strapi_plugin_users_permissions() {
+    let client = reqwest::Client::new();
+    let name = "@strapi/plugin-users-permissions".to_string();
+
+    let result_struct = get_versions(&client, name)
+        .await
+        .expect("Failed to fetch NPM versions from registry");
+
+    let result = result_struct.versions;
+
+    let expected_to_be_included = vec!["5.41.1", "4.26.1", "4.5.6"];
 
     for item in expected_to_be_included {
         assert!(

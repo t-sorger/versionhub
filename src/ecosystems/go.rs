@@ -34,7 +34,7 @@ pub async fn get_versions(
 }
 
 #[tokio::test]
-async fn test_get_versions_go() {
+async fn test_get_versions_runc() {
     let client = reqwest::Client::new();
     let name = "github.com/opencontainers/runc".to_string();
 
